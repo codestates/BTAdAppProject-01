@@ -2,7 +2,7 @@
 
 ## 사용한 기술
 
-- React, react-router-dom, Next-ui
+- React, [React Router](https://reactrouter.com/en/v6.3.0/getting-started/overview), [Next-ui](https://nextui.org/docs/guide/getting-started)
 
 ## 요구 기능(페이지 별)
 
