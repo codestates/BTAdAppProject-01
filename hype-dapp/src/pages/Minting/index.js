@@ -1,52 +1,113 @@
 import React, { useState } from "react";
 import { Container, Row, Col, Text, Card, Grid, Input, Spacer, Textarea, Button } from '@nextui-org/react';
-// import file_upload from './file_upload.png';
-import { ethers } from "ethers"
-// import { create as ipfsHttpClient } from 'ipfs-http-client'
+import file_upload from './file_upload.png';
+import { uploadJSONToIPFS, uploadFileToIPFS } from "../../pinata";
+import { ethers } from "ethers";
 
-// const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
-const client = ("");
+const Minting = (props) => {
+  const [open, setOpen] = useState(false);
+  const [openSnack, setOpenSnack] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [error, setError] = useState(false);
+  const [metaData, setMetaData] = useState({
+    name: "",
+    description: "",
+    price: "",
+  });
+  const [isListing, setIslisting] = useState(false);
 
-const Minting = ({ marketplace, nft }) => {
-  const [image, setImage] = useState('')
-  const [price, setPrice] = useState(null)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-    
-  const uploadToIPFS = async (event) => {
-      event.preventDefault()
-      const file = event.target.files[0]
-      if (typeof file !== 'undefined') {
-          try {
-              const result = await client.add(file)
-              console.log(result)
-              setImage(`https://ipfs.infura.io/ipfs/${result.path}`)
-          } catch (error) {
-              console.log("ipfs image upload error: ", error)
-          }
+  const handleFile = (event) => {
+    const file = event.target.files[0];
+    if (!file.name.match(/\.(jpg|jpeg|png)$/)) {
+      alert("ONLY JPG & JPEG & PNG FORMAT FILES ARE SUPPORTED");
+      return false;
+    } else setSelectedImage(file);
+  };
+
+  const handleToggle = (event) => {
+    setIslisting(event.target.checked);
+  };
+  const handleMetaData = (event) => {
+    const { name, value } = event.target;
+    setMetaData((prevState) => {
+      return {
+        ...prevState,
+        [name]: value,
+      };
+    });
+  };
+  const handleclose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpenSnack(false);
+  };
+
+  //Upload Image to IPFS Pinata
+  const uploadFIle = async () => {
+    try {
+      const response = await uploadFileToIPFS(selectedImage);
+      if (response.success) {
+        return response.pinataURL;
       }
-  }
-  const createNFT = async () => {
-      if (!image || !price || !name || !description) return
-      try {
-          const result = await client.add(JSON.stringify({ image, name, description }))
-          mintThenList(result)
-      } catch (error) {
-          console.log("ipfs uri upload error: ", error)
+    } catch (error) {
+      console.log("error in uploading file");
+    }
+  };
+  //upload MetaData to IPFS
+  const uploadMeta = async () => {
+    const imageURL = await uploadFIle();
+    try {
+      const { name, description } = metaData;
+      const nftJSON = {
+        name,
+        description,
+        image: imageURL,
+      };
+      const response = await uploadJSONToIPFS(nftJSON);
+      if (response.success) {
+        return response.pinataURL;
       }
-  }
-  const mintThenList = async (result) => {
-      const uri = `https://ipfs.infura.io/ipfs/${result.path}`
-      //mint nft
-      await (await nft.mint(uri)).wait()
-      //get tokenId of new nft
-      const id = await nft.tokenCount()
-      //approve marketplace to spend nft
-      await (await nft.setApprovalForAll(marketplace.address, true)).wait()
-      //add nft to marketplace
-      const listeningPrice = ethers.utils.parseEther(price.toString())
-      await (await marketplace.makeItem(nft.address, id, listeningPrice)).wait()
-  }
+    } catch (error) {
+      console.log("error in meta data");
+    }
+  };
+
+  //Mint the NFT
+  const submit = async (event) => {
+    event.preventDefault();
+    try {
+      setOpen(true);
+      const metaDataURI = await uploadMeta();
+      const _signer = props.web3.provider.getSigner();
+      const contractInstance = props.web3.contract.connect(_signer);
+      const price = ethers.utils.parseUnits(metaData.price, "ether");
+      const listingPrice = await props.web3.contract.getListingPrice();
+      const listingAmount = listingPrice.toString();
+      const transaction = await contractInstance.createToken(
+        metaDataURI,
+        price,
+        isListing,
+        {
+          value: listingAmount,
+        }
+      );
+      await transaction.wait();
+
+      setTimeout(() => {
+        setMetaData({
+          name: "",
+          description: "",
+          price: "",
+        });
+        setSelectedImage("");
+        setOpen(false);
+        setOpenSnack(true);
+      }, 2000);
+    } catch (error) {
+      setError(true);
+    }
+  };
 
   return (
     // <div className="container-fluid mt-5">
@@ -76,29 +137,20 @@ const Minting = ({ marketplace, nft }) => {
 
     <Container xl>
       <Grid.Container gap={3} justify="center">
-        {/* <Grid xs={12}>
-          <Input
-            clearable
-            bordered
-            required
-            label="Url"
-            type="url"
-            size="lg" 
-          />
-        </Grid>
-        <Spacer y={0.5} /> */}
+        
         <Grid xs={12}>
           <label for={"file-form"}>
             <br/>
-            {/* <br/>
-            <img src={file_upload} width="80px" height="80px" alt="drag" /> */}
+            <br/>
+            <img src={file_upload} width="80px" height="80px" alt="drag" />
           </label>
           <Input
             clearable
             bordered
             required
             label="File"
-            // onChange={uploadToIPFS}
+            onChange={handleFile}
+            accept=".jpg,.jpeg,.png"
             id="file-form"
             type="file"
             style={{ display:"none" }}
@@ -110,7 +162,8 @@ const Minting = ({ marketplace, nft }) => {
         <Spacer y={0.5} />
         <Grid xs={12}>
           <Input
-            onChange={(e) => setName(e.target.value)}
+            value={metaData.name}
+            onChange={handleMetaData}
             clearable
             bordered
             required
@@ -125,6 +178,8 @@ const Minting = ({ marketplace, nft }) => {
         <Spacer y={0.5} />
         <Grid xs={12}>
           <Textarea
+            value={metaData.description}
+            onChange={handleMetaData}
             bordered
             color="primary"
             status="default"
@@ -134,13 +189,15 @@ const Minting = ({ marketplace, nft }) => {
             placeholder="Description"
             size="lg"
             width="350px"
-            // onChange={(e) => setDescription(e.target.value)}
+            required
           />
         </Grid>
         <Spacer y={0.5} />
         <Grid xs={12}>
           <Input
-            // onChange={(e) => setPrice(e.target.value)}
+            error={metaData.price === "[0-9]*"}
+            value={metaData.price}
+            onChange={handleMetaData}
             clearable
             bordered
             required
@@ -155,7 +212,7 @@ const Minting = ({ marketplace, nft }) => {
         </Grid>
         <Spacer y={0.5} />
         <Grid>
-        <Button onClick={createNFT} color="success" size="lg" >
+        <Button type="submit" color="success" size="lg" >
           Create NFT!
         </Button>
         </Grid>
