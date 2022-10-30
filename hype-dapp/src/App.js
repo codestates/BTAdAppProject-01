@@ -8,6 +8,8 @@ import { Routes, Route } from "react-router-dom";
 import { getDefaultProvider } from "ethers";
 import { WagmiConfig, createClient } from "wagmi";
 import Profile from "./components/Profile";
+import { ethers } from "ethers";
+// import nftstoreABI from "../contract/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 
 const client = createClient({
   autoConnect: true,
