@@ -23,7 +23,7 @@ function App() {
         <Navbar>
           <Navbar.Brand>
             <Text as={Link} href="/">
-              hypedApp
+              <b>LION NFT MARKET</b>
             </Text>
           </Navbar.Brand>
           <Navbar.Content>

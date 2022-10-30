@@ -3,8 +3,13 @@ import { Container, Row, Col, Text, Card, Grid, Input, Spacer, Textarea, Button 
 import file_upload from './file_upload.png';
 import { uploadJSONToIPFS, uploadFileToIPFS } from "../../pinata";
 import { ethers } from "ethers";
+import { useAccount } from "wagmi";
+import { API_KEY, API_TEST_KEY } from "../../constants/const";
+import { Network, Alchemy } from "alchemy-sdk";
+
 
 const Minting = (props) => {
+  const { address, isConnected } = useAccount();
   const [open, setOpen] = useState(false);
   const [openSnack, setOpenSnack] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
@@ -110,90 +115,71 @@ const Minting = (props) => {
   };
 
   return (
-    // <div className="container-fluid mt-5">
-    //   <div className="row">
-    //     <main role="main" className="col-lg-12 mx-auto" style={{ maxWidth: '1000px' }}>
-    //       <div className="content mx-auto">
-    //         <Row className="g-4">
-    //           <Form.Control
-    //             type="file"
-    //             required
-    //             name="file"
-    //             onChange={uploadToIPFS}
-    //           />
-    //           <Form.Control onChange={(e) => setName(e.target.value)} size="lg" required type="text" placeholder="Name" />
-    //           <Form.Control onChange={(e) => setDescription(e.target.value)} size="lg" required as="textarea" placeholder="Description" />
-    //           <Form.Control onChange={(e) => setPrice(e.target.value)} size="lg" required type="number" placeholder="Price in ETH" />
-    //           <div className="d-grid px-0">
-    //             <Button onClick={createNFT} variant="primary" size="lg">
-    //               Create & List NFT!
-    //             </Button>
-    //           </div>
-    //         </Row>
-    //       </div>
-    //     </main>
-    //   </div>
-    // </div>
-
     <Container xl>
-      <Grid.Container gap={3} justify="center">
-        
-        <Grid xs={12}>
+      <Grid.Container gap={1} justify="center">
+        <Spacer y={1.0} />
+        <Grid xs={12} justify="center">
+          <Text h1>Create NFT</Text>
+        </Grid>
+        <Spacer y={1.5} />
+      </Grid.Container>
+      <Grid.Container gap={2} justify="center">
+        <Grid xs={4} justify="left"></Grid>
+        <Grid xs={8} justify="left">
+          <Text h4 color="primary">File</Text>
+        </Grid>
+        <Grid xs={12} justify="center">
           <label for={"file-form"}>
-            <br/>
-            <br/>
-            <img src={file_upload} width="80px" height="80px" alt="drag" />
+            <img src={file_upload} width="80px" height="80px" alt="nft" />
           </label>
           <Input
             clearable
-            bordered
             required
-            label="File"
             onChange={handleFile}
             accept=".jpg,.jpeg,.png"
             id="file-form"
             type="file"
             style={{ display:"none" }}
             size="lg"
-            width="350px"
-            color="primary"
           />
         </Grid>
+        <Grid xs={4} justify="center"></Grid>
+        <Grid xs={8} justify="left">
+          <Text size="$xs" color="error">* File types supported: JPG, JPEG, PNG.</Text>
+        </Grid>
         <Spacer y={0.5} />
-        <Grid xs={12}>
+        <Grid xs={12} justify="center">
           <Input
             value={metaData.name}
             onChange={handleMetaData}
             clearable
             bordered
             required
-            label="NFT Name"
+            label={<Text h4 color="primary">Name</Text>}
             type="text"
             placeholder="NFT Name"
             size="lg"
-            width="350px"
-            color="primary"
+            width="400px"
           />
         </Grid>
-        <Spacer y={0.5} />
-        <Grid xs={12}>
+        <Spacer y={1.0} />
+        <Grid xs={12} justify="center">
           <Textarea
             value={metaData.description}
             onChange={handleMetaData}
             bordered
-            color="primary"
             status="default"
             helperColor="primary"
             helperText="Item's detail page underneath its image."
-            label="Description"
-            placeholder="Description"
+            label={<Text h4 color="primary">Description</Text>}
+            placeholder="NFT Description"
             size="lg"
-            width="350px"
+            width="400px"
             required
           />
         </Grid>
-        <Spacer y={0.5} />
-        <Grid xs={12}>
+        <Spacer y={1.0} />
+        <Grid xs={12} justify="center">
           <Input
             error={metaData.price === "[0-9]*"}
             value={metaData.price}
@@ -201,20 +187,19 @@ const Minting = (props) => {
             clearable
             bordered
             required
-            label="Price"
+            label={<Text h4 color="primary">Price</Text>}
             type="number"
             placeholder="Price in ETH"
             size="lg"
-            width="350px"
-            color="primary"
+            width="400px"
             labelRight="ETH"
           />
         </Grid>
-        <Spacer y={0.5} />
-        <Grid>
-        <Button type="submit" color="success" size="lg" >
-          Create NFT!
-        </Button>
+        <Spacer y={1.5} />
+        <Grid xs={12} justify="center">
+          <Button type="submit" onClick={submit} color="primary" size="lg">
+            Create NFT!
+          </Button>
         </Grid>
       </Grid.Container>
     </Container>
