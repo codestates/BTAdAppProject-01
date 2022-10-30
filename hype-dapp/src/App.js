@@ -19,6 +19,7 @@ function App() {
         </Navbar.Brand>
         <Navbar.Content>
           <Navbar.Link href="/#">Connect</Navbar.Link>
+          <Navbar.Link href="/explorer">Marketplace</Navbar.Link>
           <Navbar.Link href="/minting">Create</Navbar.Link>
           <Navbar.Item>
             <Avatar as={Link} href="/my-page"></Avatar>
